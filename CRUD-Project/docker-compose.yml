@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app         # Mount the current directory to /app in the container
+      - /app/tmp       # Optional: Air requires this for hot-reload cache
+    ports:
+      - "5000:5000"    # Map port 5000 on host to port 5000 in the container
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_NAME=crud_db
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: crud_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  adminer:
+    image: adminer
+    ports:
+        - "8080:8080"
+
+volumes:
+  postgres_data:

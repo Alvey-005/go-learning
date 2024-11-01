@@ -1,0 +1,9 @@
+# Config for the 'air' hot-reload tool
+[build]
+cmd = "go build -o ./tmp/main ./cmd"  # Adjust the path if your main.go is located under /cmd
+bin = "tmp/main"
+full_bin = "tmp/main"
+exclude_dir = ["tmp"]
+
+[log]
+level = "debug"
