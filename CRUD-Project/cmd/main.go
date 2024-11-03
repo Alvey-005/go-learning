@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -29,7 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
-	defer dbInstance.Close() // Ensure the connection is closed when done
+	// defer dbInstance.Close() // Ensure the connection is closed when done
 
 	// Test the connection
 	if err := dbInstance.Ping(ctx); err != nil {
@@ -40,6 +41,22 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/health", handlers.HealthCheck).Methods("GET")
 	r.HandleFunc("/api", checkStatus).Methods("GET")
+
+	r.HandleFunc("/items", handlers.CreateItem).Methods("POST")
+
+	http.HandleFunc("/init-db", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		connString := "your_connection_string" // Replace with your actual connection string
+		db, err := pg.NewPG(ctx, connString)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to initialize DB: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "DB initialized successfully: %+v", db)
+	})
 
 	log.Println("Starting server on :5000")
 

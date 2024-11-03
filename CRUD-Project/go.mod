@@ -2,7 +2,6 @@ module CRUD-Project
 
 go 1.21
 
-toolchain go1.21.13
 
 require (
 	github.com/gorilla/mux v1.8.1

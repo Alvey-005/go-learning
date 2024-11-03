@@ -5,10 +5,10 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - .:/app         # Mount the current directory to /app in the container
-      - /app/tmp       # Optional: Air requires this for hot-reload cache
+      - .:/app
+      - /app/tmp
     ports:
-      - "5000:5000"    # Map port 5000 on host to port 5000 in the container
+      - "5000:5000"
     depends_on:
       - db
     environment:
@@ -17,6 +17,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=12345
       - DB_NAME=crud_db
+
   db:
     image: postgres:13
     environment:
@@ -27,10 +28,20 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate
+    entrypoint: ["migrate", "-path", "/migrations", "-database", "postgres://postgres:12345@db:5432/crud_db?sslmode=disable", "up"]
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - db
+  
+
   adminer:
     image: adminer
     ports:
-        - "8080:8080"
+      - "8080:8080"
 
 volumes:
   postgres_data:

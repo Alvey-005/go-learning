@@ -17,34 +17,45 @@ var (
 	pgOnce     sync.Once
 )
 
-// NewPG initializes the PostgreSQL connection pool.
-// It is safe to call multiple times, but it will only create a single instance.
+// NewPG initializes the PostgreSQL connection pool with a singleton pattern.
 func NewPG(ctx context.Context, connString string) (*postgres, error) {
-	var err error
+	var initErr error // define a local error variable
 
 	pgOnce.Do(func() {
-		db, errInit := pgxpool.New(ctx, connString)
-		if errInit != nil {
-			err = fmt.Errorf("unable to create connection pool: %w", errInit)
+		db, err := pgxpool.New(ctx, connString)
+		if err != nil {
+			initErr = fmt.Errorf("unable to create connection pool: %w", err)
 			return
 		}
-
-		pgInstance = &postgres{db}
+		pgInstance = &postgres{db: db}
 	})
 
-	if err != nil {
-		return nil, err // Return the error if initialization failed
+	// If initialization failed, return the error
+	if initErr != nil {
+		return nil, initErr
 	}
+
 	return pgInstance, nil
+}
+
+// GetDB exposes the pgxpool.Pool to allow query execution.
+func (pg *postgres) GetDB() *pgxpool.Pool {
+	if pg == nil || pg.db == nil {
+		return nil // return nil if not initialized
+	}
+	return pg.db
 }
 
 // Ping checks if the database connection is alive.
 func (pg *postgres) Ping(ctx context.Context) error {
+	if pg == nil || pg.db == nil {
+		return fmt.Errorf("database not initialized")
+	}
 	return pg.db.Ping(ctx)
 }
 
-// Close closes the database connection pool.
-func (pg *postgres) Close() {
+// Close closes the database connection pool with context.
+func (pg *postgres) Close(ctx context.Context) {
 	if pg.db != nil {
 		pg.db.Close()
 	}
